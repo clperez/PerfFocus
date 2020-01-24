@@ -17,6 +17,7 @@ namespace PrimeCalculation
         }
     }
 
+    [MemoryDiagnoser] //https://adamsitnik.com/the-new-Memory-Diagnoser/
     public class PrimeBecnhmark
     {
         [Params(1000, 10000, 50000, 200000)]
