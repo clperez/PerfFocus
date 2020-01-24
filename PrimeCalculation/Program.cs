@@ -1,5 +1,7 @@
-﻿using System;
+﻿using BenchmarkDotNet.Attributes;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 
@@ -7,26 +9,45 @@ namespace PrimeCalculation
 {
     class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
-            foreach (var primeNumber in GetNextPrimeNaive())
-                Console.WriteLine(primeNumber);
+            var summary = BenchmarkDotNet.Running.BenchmarkRunner.Run<PrimeBecnhmark>();
+
+ ///           foreach (var i in PrimeLib.Calculate.Naive()) Console.WriteLine(i);
         }
+    }
 
+    public class PrimeBecnhmark
+    {
+        [Params(1000, 10000, 50000, 200000)]
+        public long max;
 
-        // One core simd 
-        // Multicore paralelization
-        private static IEnumerable<long> GetNextPrimeNaive()
+        private long pingInterval = 10000;
+        private StreamWriter _naiveOutput;
+        private StreamWriter _algorithmsOutput;
+
+        [GlobalSetup]
+        public void Setup ()
         {
-            for (var currentValue = 1; ; currentValue++)
-            {
-                bool isPrime = true;
-                for (var currentDenominator = 2; currentDenominator < currentValue; ++ currentDenominator)
-                {
-                    if (!(isPrime = currentValue % currentDenominator != 0)) break;
-                }
+            _naiveOutput = new StreamWriter("naive.txt");
+            _algorithmsOutput = new StreamWriter("algor.txt");
+        }
+        
+        [Benchmark]
+        public void RunBenchmarkNaive() => RunBenchmark(_naiveOutput, PrimeLib.Calculate.Naive);
+        
+        [Benchmark]
+        public void RunBenchmarkAlgorithm() => RunBenchmark(_algorithmsOutput, PrimeLib.Calculate.ImprovedAlgorithm);
 
-                if (isPrime) yield return currentValue;
+        public void RunBenchmark(StreamWriter writer, Func<long, IEnumerable<long>> function) => Run(max, pingInterval, writer, function);
+
+        public static void Run (long ceiling, long pingInterval, StreamWriter writer, Func<long,IEnumerable<long>> function)
+        {
+            foreach (var i in function(ceiling))
+            {
+                if (i % pingInterval == 0)
+                    Console.WriteLine($"Processed {i}");
+                writer.WriteLine(i);
             }
         }
     }
